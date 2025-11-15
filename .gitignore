@@ -137,3 +137,18 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Uploads and temporary files
+uploads/
+temp/
+public/uploads/
+
+# Database files
+*.sqlite
+*.db
+
+# Docker
+.dockerignore
+
+# Prisma migrations (keep schema, ignore built migrations)
+prisma/migrations/
