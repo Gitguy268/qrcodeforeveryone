@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model QRCode {
+  id                    String    @id @default(cuid())
+  slug                  String    @unique @db.VarChar(9)
+  mode                  QRMode
+  content               String
+  targetUrl             String?   @db.VarChar(2048)
+  options               Json
+  logoUrl               String?   @db.VarChar(2048)
+  ownerEditTokenHash    String    @db.VarChar(255)
+  active                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  scanCount             Int       @default(0)
+  lastScannedAt         DateTime?
+
+  // Relations
+  scans                 Scan[]
+
+  @@map("qr_codes")
+  @@index([slug])
+  @@index([active])
+  @@index([createdAt])
+}
+
+model Scan {
+  id        String   @id @default(cuid())
+  qrcodeId  String
+  timestamp DateTime @default(now())
+  ipHash    String?  @db.VarChar(64)
+  userAgent String?  @db.Text
+  referer   String?  @db.VarChar(2048)
+
+  // Relations
+  qrcode    QRCode   @relation(fields: [qrcodeId], references: [id], onDelete: Cascade)
+
+  @@map("scans")
+  @@index([qrcodeId])
+  @@index([timestamp])
+}
+
+enum QRMode {
+  EMBED
+  REDIRECT
+}
