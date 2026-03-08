@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal QR Generator</title>
+    <!-- Importing a clean, sans-serif font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- QRCode.js Library from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --accent: #3b82f6;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            max-width: 850px;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            gap: 3rem;
+            align-items: flex-start;
+        }
+
+        .settings {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .preview {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: var(--radius);
+            min-height: 350px;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0 0 1rem 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border);
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .file-input {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        #qr-display-canvas {
+            background: white;
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Hidden internal div for the library */
+        #qr-hidden-node {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                flex-direction: column;
+                padding: 1.5rem;
+                gap: 2rem;
+            }
+            .preview {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="settings">
+            <div>
+                <h1>Minimal QR Generator</h1>
+                <p class="subtitle">Enter text and customize your code.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="text-input">Content / URL</label>
+                <input type="text" id="text-input" placeholder="Enter link or text..." value="https://google.com">
+            </div>
+
+            <div class="options-grid">
+                <div class="form-group">
+                    <label>Dark Color</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="fg-color" value="#000000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Light Color</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="bg-color" value="#ffffff">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="logo-input">Add Logo (Center)</label>
+                <input type="file" id="logo-input" class="file-input" accept="image/*">
+            </div>
+        </div>
+
+        <div class="preview">
+            <!-- Hidden area where library renders -->
+            <div id="qr-hidden-node"></div>
+            <!-- Visible canvas for user -->
+            <canvas id="qr-display-canvas"></canvas>
+            <p style="font-size: 0.7rem; color: #94a3b8; margin-top: 1.5rem;">Save image via right-click</p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ELEMENTS & STATE
+         */
+        const textInput = document.getElementById('text-input');
+        const fgColorInput = document.getElementById('fg-color');
+        const bgColorInput = document.getElementById('bg-color');
+        const logoInput = document.getElementById('logo-input');
+        const qrHidden = document.getElementById('qr-hidden-node');
+        const displayCanvas = document.getElementById('qr-display-canvas');
+        
+        let logoImage = null;
+        let qrInstance = null;
+
+        /**
+         * CORE LOGIC
+         */
+
+        // Main function to initiate QR generation
+        function updateQR() {
+            const text = textInput.value.trim() || " ";
+            const colorDark = fgColorInput.value;
+            const colorLight = bgColorInput.value;
+
+            // Clear the hidden library container
+            qrHidden.innerHTML = "";
+
+            // Initialize/Update the library in the hidden node
+            // Using Level H (High) is CRITICAL for logo support
+            qrInstance = new QRCode(qrHidden, {
+                text: text,
+                width: 400,
+                height: 400,
+                colorDark: colorDark,
+                colorLight: colorLight,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // The library renders asynchronously. 
+            // We poll for the canvas to be ready before drawing to display.
+            pollForCanvas();
+        }
+
+        function pollForCanvas() {
+            const canvas = qrHidden.querySelector('canvas');
+            if (canvas) {
+                renderToDisplay(canvas);
+            } else {
+                // If the library chose to render as Table (rare) or isn't ready
+                requestAnimationFrame(pollForCanvas);
+            }
+        }
+
+        // Composite the QR code and the Logo onto the visible canvas
+        function renderToDisplay(sourceCanvas) {
+            const ctx = displayCanvas.getContext('2d');
+            const size = 400;
+            
+            displayCanvas.width = size;
+            displayCanvas.height = size;
+
+            // 1. Draw the base QR code
+            ctx.drawImage(sourceCanvas, 0, 0, size, size);
+
+            // 2. Draw the Logo if it exists
+            if (logoImage) {
+                // Determine logo size (approx 22% of total size is safe for Level H)
+                const logoSize = size * 0.22;
+                const pos = (size - logoSize) / 2;
+
+                // Create a clean background "island" for the logo so QR pixels don't touch it
+                ctx.fillStyle = bgColorInput.value;
+                ctx.beginPath();
+                // Rounded background for logo
+                const radius = 6;
+                const pad = 4;
+                ctx.roundRect(pos - pad, pos - pad, logoSize + (pad * 2), logoSize + (pad * 2), radius);
+                ctx.fill();
+
+                // Draw the actual logo
+                ctx.drawImage(logoImage, pos, pos, logoSize, logoSize);
+            }
+        }
+
+        /**
+         * EVENT LISTENERS
+         */
+
+        // File handling for logo
+        logoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        logoImage = img;
+                        updateQR();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                logoImage = null;
+                updateQR();
+            }
+        });
+
+        // Live updates for text and colors
+        [textInput, fgColorInput, bgColorInput].forEach(el => {
+            el.addEventListener('input', updateQR);
+        });
+
+        // Initialize on load
+        window.onload = updateQR;
+
+        /**
+         * Polyfill for roundRect (older browsers)
+         */
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            };
+        }
+    </script>
+</body>
+</html>
